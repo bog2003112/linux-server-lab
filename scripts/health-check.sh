@@ -1,65 +1,127 @@
 #!/usr/bin/env bash
 
-set -u
+set -uo pipefail
+
+# Thresholds can be overridden with environment variables.
+DISK_WARN_THRESHOLD="${DISK_WARN_THRESHOLD:-80}"
+DISK_CRIT_THRESHOLD="${DISK_CRIT_THRESHOLD:-90}"
+MEMORY_WARN_THRESHOLD="${MEMORY_WARN_THRESHOLD:-80}"
+MEMORY_CRIT_THRESHOLD="${MEMORY_CRIT_THRESHOLD:-90}"
+PING_TARGET="${PING_TARGET:-1.1.1.1}"
+DNS_TARGET="${DNS_TARGET:-github.com}"
+
+# Exit codes: 0 = OK, 1 = WARNING, 2 = CRITICAL, 3 = UNKNOWN.
 status=0
 
-echo "======================================"
-echo "       SERVER HEALTH CHECK"
-echo "======================================"
+print_section() {
+    printf '\n========================================\n'
+    printf '  %s\n' "$1"
+    printf '========================================\n'
+}
 
-echo ""
-disk_usage=$(df -P / | awk 'NR==2 {gsub("%","",$5); print $5}')
+record_status() {
+    local new_status="$1"
+    if (( new_status > status )); then
+        status="$new_status"
+    fi
+}
 
-echo "[DISK]"
+validate_thresholds() {
+    local name value
+    for name in \
+        DISK_WARN_THRESHOLD DISK_CRIT_THRESHOLD \
+        MEMORY_WARN_THRESHOLD MEMORY_CRIT_THRESHOLD; do
+        value="${!name}"
+        if [[ ! "$value" =~ ^[0-9]+$ ]] || (( value < 1 || value > 100 )); then
+            printf 'ERROR: %s must be an integer between 1 and 100.\n' "$name" >&2
+            return 1
+        fi
+    done
 
-if (( disk_usage >=90 )); then
-    echo "CRITICAL: Disk usage ${disk_usage}%"
-    status=1
-elif (( disk_usage >=80 )); then
-    echo "WARNING: Disk usage ${disk_usage}%"
-else
-    echo "OK: Disk usage ${disk_usage}%"
+    if (( DISK_WARN_THRESHOLD >= DISK_CRIT_THRESHOLD )); then
+        printf 'ERROR: disk warning threshold must be lower than critical threshold.\n' >&2
+        return 1
+    fi
+
+    if (( MEMORY_WARN_THRESHOLD >= MEMORY_CRIT_THRESHOLD )); then
+        printf 'ERROR: memory warning threshold must be lower than critical threshold.\n' >&2
+        return 1
+    fi
+}
+
+print_section "SERVER HEALTH CHECK"
+
+if ! validate_thresholds; then
+    exit 3
 fi
 
-echo ""
+print_section "DISK USAGE"
+disk_usage="$(df -P / 2>/dev/null | awk 'NR == 2 { gsub(/%/, "", $5); print $5 }')"
 
-memory_usage=$(free | awk '/Mem:/ {printf "%.0f", $3/$2*100}')
-
-echo "[MEMORY]"
-
-if (( memory_usage >=90 )); then
-    echo "CRITICAL: RAM usage ${memory_usage}%"
-    status=1
-elif (( memory_usage >=80 )); then
-    echo "WARNING:  RAM usage ${memory_usage}%"
+if [[ "$disk_usage" =~ ^[0-9]+$ ]]; then
+    if (( disk_usage >= DISK_CRIT_THRESHOLD )); then
+        printf 'CRITICAL: root filesystem usage is %s%% (threshold: %s%%).\n' \
+            "$disk_usage" "$DISK_CRIT_THRESHOLD"
+        record_status 2
+    elif (( disk_usage >= DISK_WARN_THRESHOLD )); then
+        printf 'WARNING: root filesystem usage is %s%% (threshold: %s%%).\n' \
+            "$disk_usage" "$DISK_WARN_THRESHOLD"
+        record_status 1
+    else
+        printf 'OK: root filesystem usage is %s%%.\n' "$disk_usage"
+    fi
 else
-   echo "OK: RAM usage ${memory_usage}%"
+    printf 'UNKNOWN: could not determine root filesystem usage.\n'
+    record_status 3
 fi
 
-echo "[NETWORK]"
-
-if ping -c 2 -W 2 8.8.8.8 >/dev/null 2>&1; then
-    echo "OK: Internet available"
-
+print_section "MEMORY USAGE"
+if command -v free >/dev/null 2>&1; then
+    memory_usage="$(free | awk '/^Mem:/ { if ($2 > 0) printf "%.0f", ($3 / $2) * 100 }')"
 else
-    echo "CRITICAL: Internet unavailable"
-    status=1
+    memory_usage=""
 fi
 
-echo ""
-
-echo "[DNS]"
-
-if getent hosts google.com >/dev/null 2>&1; then
-    echo "OK: DNS resolution works"
+if [[ "$memory_usage" =~ ^[0-9]+$ ]]; then
+    if (( memory_usage >= MEMORY_CRIT_THRESHOLD )); then
+        printf 'CRITICAL: RAM usage is %s%% (threshold: %s%%).\n' \
+            "$memory_usage" "$MEMORY_CRIT_THRESHOLD"
+        record_status 2
+    elif (( memory_usage >= MEMORY_WARN_THRESHOLD )); then
+        printf 'WARNING: RAM usage is %s%% (threshold: %s%%).\n' \
+            "$memory_usage" "$MEMORY_WARN_THRESHOLD"
+        record_status 1
+    else
+        printf 'OK: RAM usage is %s%%.\n' "$memory_usage"
+    fi
 else
-    echo "CRITICAL: DNS resolution failed"
-    status=1
+    printf 'UNKNOWN: could not determine memory usage.\n'
+    record_status 3
 fi
 
-echo ""
-echo "====================================="
-echo "      HEALTH CHECK FINISHED"
-echo "====================================="
+print_section "NETWORK CONNECTIVITY"
+if command -v ping >/dev/null 2>&1 && ping -c 2 -W 2 "$PING_TARGET" >/dev/null 2>&1; then
+    printf 'OK: %s responds to ICMP.\n' "$PING_TARGET"
+else
+    printf 'CRITICAL: connectivity check to %s failed.\n' "$PING_TARGET"
+    record_status 2
+fi
+
+print_section "DNS RESOLUTION"
+if command -v getent >/dev/null 2>&1 && getent ahosts "$DNS_TARGET" >/dev/null 2>&1; then
+    printf 'OK: DNS resolution works for %s.\n' "$DNS_TARGET"
+else
+    printf 'CRITICAL: DNS resolution failed for %s.\n' "$DNS_TARGET"
+    record_status 2
+fi
+
+print_section "FINAL RESULT"
+case "$status" in
+    0) printf 'OVERALL STATUS: OK\n' ;;
+    1) printf 'OVERALL STATUS: WARNING\n' ;;
+    2) printf 'OVERALL STATUS: CRITICAL\n' ;;
+    *) printf 'OVERALL STATUS: UNKNOWN\n' ;;
+esac
+printf 'Exit code: %s\n' "$status"
 
 exit "$status"
