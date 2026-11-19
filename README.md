@@ -1,112 +1,233 @@
 # Linux Server Lab
 
-A hands-on Linux system administration project built on **Ubuntu 24.04 LTS**. The lab focuses on Bash automation, system monitoring, and network diagnostics.
+[![CI](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml/badge.svg?branch=audit%2Fharden-bash-scripts)](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml)
+![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)
+![Bash](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnubash&logoColor=white)
+![ShellCheck](https://img.shields.io/badge/Code_Quality-ShellCheck-blue)
 
-The repository contains small, readable scripts that inspect a Linux host and report useful operational information. It is an educational portfolio project and does not make configuration changes to the host.
+**Linux Server Lab** is a hands-on Linux system administration project focused on Bash automation, server health monitoring, and network diagnostics.
 
-## Project contents
+The project is developed and tested on **Ubuntu 24.04 LTS**. It demonstrates practical Linux administration skills through custom diagnostic scripts, configurable health checks, and automated code validation with GitHub Actions.
 
-| Path | Purpose |
-| --- | --- |
-| scripts/system-info.sh | Displays operating system, kernel, uptime, CPU, memory, and root filesystem information. |
-| scripts/network-info.sh | Reports network interfaces, routes, DNS configuration, and basic connectivity checks. |
-| scripts/health-check.sh | Checks disk and memory usage, internet connectivity, and DNS resolution. |
-| docs/linux-basics.md | Notes on basic Linux administration commands. |
-| docs/networking.md | Notes on Linux networking diagnostics. |
-| docs/ssh.md | Notes on SSH access and key handling. |
+This is an educational portfolio project built incrementally with a focus on clean scripting, reliability, and maintainability.
 
-## Requirements
+## Features
 
-- Ubuntu 24.04 LTS or another recent Linux distribution.
-- Bash.
-- Standard Linux utilities: ip, uptime, free, df, uname, awk.
-- ping and getent for connectivity and DNS checks.
-- resolvectl is optional; the network script falls back to /etc/resolv.conf.
+### 1. System Information
 
-On Ubuntu, the required utilities are normally available by default. If the ip or ping command is missing, install the relevant packages:
+`system-info.sh`
 
-```bash
-sudo apt update
-sudo apt install -y iproute2 iputils-ping
+Collects and displays:
+- Operating system and distribution version.
+- Hostname and kernel version.
+- CPU architecture and processor information.
+- System uptime and load average.
+- RAM and swap usage.
+- Root filesystem utilization.
+
+### 2. Network Diagnostics
+
+`network-info.sh`
+
+Provides information about:
+- Network interfaces and IP addresses.
+- Routing table and default gateway.
+- DNS configuration.
+- Internet connectivity using ICMP.
+- DNS resolution checks.
+
+### 3. Server Health Monitoring
+
+`health-check.sh`
+
+Performs automated health checks for:
+- Disk utilization.
+- Memory utilization.
+- Network connectivity.
+- DNS resolution.
+
+Supports configurable warning and critical thresholds.
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| Ubuntu 24.04 LTS | Operating system |
+| Bash | Automation and diagnostic scripts |
+| Linux CLI | System administration |
+| iproute2 | Network diagnostics |
+| SSH | Remote server access |
+| Git | Version control |
+| GitHub | Source code management |
+| GitHub Actions | CI automation |
+| ShellCheck | Bash static analysis |
+
+## Project Structure
+
+```text
+linux-server-lab/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+├── docs/
+│   ├── linux-basics.md
+│   ├── networking.md
+│   └── ssh.md
+├── scripts/
+│   ├── system-info.sh
+│   ├── network-info.sh
+│   └── health-check.sh
+├── screenshots/
+└── README.md
 ```
 
-## Quick start
+## Installation
 
-Clone the repository and enter the project directory:
+Clone the repository:
 
 ```bash
 git clone https://github.com/bog2003112/linux-server-lab.git
 cd linux-server-lab
 ```
 
-Make the scripts executable:
+Make scripts executable:
 
 ```bash
 chmod +x scripts/*.sh
 ```
 
-Run an individual script:
+Install required utilities if they are missing:
+
+```bash
+sudo apt update
+sudo apt install -y iproute2 iputils-ping
+```
+
+## Usage
+
+Run system information collection:
 
 ```bash
 ./scripts/system-info.sh
+```
+
+Run network diagnostics:
+
+```bash
 ./scripts/network-info.sh
+```
+
+Run server health monitoring:
+
+```bash
 ./scripts/health-check.sh
 ```
 
-The scripts are read-only: they collect and display information but do not modify network, service, or system configuration.
+## Health Check Configuration
 
-## Health-check exit codes
+The health monitoring script supports configurable thresholds through environment variables.
 
-health-check.sh uses monitoring-friendly exit codes:
+Default thresholds:
 
-| Code | Meaning |
-| --- | --- |
-| 0 | OK — all checks passed. |
-| 1 | WARNING — at least one resource crossed its warning threshold. |
-| 2 | CRITICAL — a critical threshold or connectivity check failed. |
-| 3 | UNKNOWN — a metric could not be read or configuration is invalid. |
+| Metric | Warning | Critical |
+|---|---:|---:|
+| Disk usage | 80% | 90% |
+| Memory usage | 80% | 90% |
 
-Default resource thresholds:
-
-- Disk warning: 80%; critical: 90%.
-- Memory warning: 80%; critical: 90%.
-
-Thresholds and check targets can be overridden with environment variables:
+Example: change disk thresholds:
 
 ```bash
-DISK_WARN_THRESHOLD=75 DISK_CRIT_THRESHOLD=90 ./scripts/health-check.sh
-MEMORY_WARN_THRESHOLD=70 MEMORY_CRIT_THRESHOLD=85 ./scripts/health-check.sh
-PING_TARGET=1.1.1.1 DNS_TARGET=github.com ./scripts/health-check.sh
+DISK_WARN_THRESHOLD=75 \
+DISK_CRIT_THRESHOLD=90 \
+./scripts/health-check.sh
 ```
 
-A failed ICMP test does not always prove that the internet is unavailable: some networks block ping traffic. Interpret the connectivity result in the context of the environment.
-
-## Basic validation
-
-Check Bash syntax before running the scripts:
+Change memory thresholds:
 
 ```bash
-bash -n scripts/system-info.sh
-bash -n scripts/network-info.sh
-bash -n scripts/health-check.sh
+MEMORY_WARN_THRESHOLD=70 \
+MEMORY_CRIT_THRESHOLD=85 \
+./scripts/health-check.sh
 ```
 
-If ShellCheck is installed, run:
+Configure connectivity targets:
 
 ```bash
-shellcheck scripts/*.sh
+PING_TARGET=1.1.1.1 \
+DNS_TARGET=github.com \
+./scripts/health-check.sh
 ```
 
-## Learning goals
+Warning thresholds must be lower than critical thresholds. Values must be integers between 1 and 100.
 
-This project is intended to demonstrate practical familiarity with:
+### Exit Codes
 
-- Linux command-line tools and filesystem information.
-- Bash scripting, functions, variables, conditionals, and exit codes.
-- IP addressing, routing tables, DNS, and connectivity checks.
-- Basic server health monitoring and configurable thresholds.
-- Git and GitHub project documentation.
+The health check returns monitoring-friendly exit codes:
 
-## Project status
+| Exit Code | Status | Description |
+|---|---|---|
+| `0` | OK | All checks passed |
+| `1` | WARNING | A warning threshold was exceeded |
+| `2` | CRITICAL | A critical threshold or connectivity check failed |
+| `3` | UNKNOWN | A metric could not be read or configuration is invalid |
 
-The lab is being developed incrementally. Containerization, web-server deployment, and CI/CD automation are planned as separate future milestones and are not claimed as implemented features yet.
+These exit codes allow the script to be integrated into monitoring and automation workflows.
+
+**Note:** ICMP traffic may be blocked by some networks. A failed ping does not necessarily mean that the internet connection is unavailable.
+
+## Continuous Integration
+
+The project uses **GitHub Actions** for automated Bash validation.
+
+The CI workflow runs on pushes and pull requests.
+
+Current pipeline:
+
+1. Checkout repository.
+2. Install ShellCheck.
+3. Validate Bash syntax using `bash -n`.
+4. Analyze scripts using ShellCheck.
+
+All checks must pass for the workflow to complete successfully.
+
+[View GitHub Actions](https://github.com/bog2003112/linux-server-lab/actions)
+
+## Design Principles
+
+- Read-only diagnostics: scripts collect information without modifying host configuration.
+- Configurable monitoring thresholds.
+- Explicit exit codes for automation.
+- Bash syntax validation.
+- Static analysis with ShellCheck.
+- Incremental development and version control.
+
+## Roadmap
+
+Planned development milestones:
+
+- [x] Linux system information collection.
+- [x] Network diagnostics.
+- [x] Server health monitoring.
+- [x] Configurable warning and critical thresholds.
+- [x] Bash syntax validation.
+- [x] ShellCheck integration.
+- [x] GitHub Actions CI pipeline.
+- [ ] Docker containerization.
+- [ ] Docker Compose deployment.
+- [ ] Nginx web server configuration.
+- [ ] Container health monitoring.
+- [ ] Extended CI/CD automation.
+
+## Project Status
+
+**Active development.**
+
+This repository is a practical Linux system administration and DevOps learning project. New infrastructure components and automation capabilities will be added incrementally.
+
+---
+
+**Author:** Bogdan Gareev
+
+**GitHub:** [@bog2003112](https://github.com/bog2003112)
+
+**Repository:** [Linux Server Lab](https://github.com/bog2003112/linux-server-lab)****
