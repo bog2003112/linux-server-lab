@@ -200,6 +200,24 @@ All checks must pass for the workflow to complete successfully.
 - Bash syntax validation.
 - Static analysis with ShellCheck.
 - Incremental development and version control.
+  
+## Screenshots
+
+### System Information
+Displays operating system, CPU, memory, uptime, and disk usage.
+
+![System Information](screenshots/system-info.png)
+
+### Network Diagnostics
+Displays network interface diagnostics, routing checks, and connectivity status.
+
+![Network Diagnostics](screenshots/network-info.png)
+
+### Server Health Check
+Displays disk and memory monitoring, connectivity checks, and overall health status.
+
+![Server Health Check](screenshots/health-check.png)
+
 
 ## Roadmap
 
