@@ -24,7 +24,7 @@ jobs:
       - name: Check Bash syntax
         run: |
           set -e
-          for script in scripts/*.sh: do
+          for script in scripts/*.sh; do
           bash -n "$script"
           done
 
