@@ -2,7 +2,6 @@
 
 set -uo pipefail
 
-# Thresholds can be overridden with environment variables.
 DISK_WARN_THRESHOLD="${DISK_WARN_THRESHOLD:-80}"
 DISK_CRIT_THRESHOLD="${DISK_CRIT_THRESHOLD:-90}"
 MEMORY_WARN_THRESHOLD="${MEMORY_WARN_THRESHOLD:-80}"
@@ -10,7 +9,6 @@ MEMORY_CRIT_THRESHOLD="${MEMORY_CRIT_THRESHOLD:-90}"
 PING_TARGET="${PING_TARGET:-1.1.1.1}"
 DNS_TARGET="${DNS_TARGET:-github.com}"
 
-# Exit codes: 0 = OK, 1 = WARNING, 2 = CRITICAL, 3 = UNKNOWN.
 status=0
 
 print_section() {
