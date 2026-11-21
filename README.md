@@ -1,6 +1,6 @@
 # Linux Server Lab
 
-[![CI](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml/badge.svg?branch=audit%2Fharden-bash-scripts)](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml)
+[![CI](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bog2003112/linux-server-lab/actions/workflows/ci.yml)
 ![Ubuntu](https://img.shields.io/badge/Ubuntu-24.04_LTS-E95420?logo=ubuntu&logoColor=white)
 ![Bash](https://img.shields.io/badge/Shell-Bash-4EAA25?logo=gnubash&logoColor=white)
 ![ShellCheck](https://img.shields.io/badge/Code_Quality-ShellCheck-blue)
@@ -77,7 +77,12 @@ linux-server-lab/
 │   ├── system-info.sh
 │   ├── network-info.sh
 │   └── health-check.sh
+├── tests/
+│   └── health-check.sh
 ├── screenshots/
+│   ├── system-info.png
+│   ├── network-info.png
+│   └── health-check.png
 └── README.md
 ```
 
@@ -169,7 +174,7 @@ The health check returns monitoring-friendly exit codes:
 | `0` | OK | All checks passed |
 | `1` | WARNING | A warning threshold was exceeded |
 | `2` | CRITICAL | A critical threshold or connectivity check failed |
-| `3` | UNKNOWN | A metric could not be read or configuration is invalid |
+| `3` | UNKNOWN | A metric or required command could not be checked, or configuration is invalid |
 
 These exit codes allow the script to be integrated into monitoring and automation workflows.
 
@@ -179,16 +184,7 @@ These exit codes allow the script to be integrated into monitoring and automatio
 
 The project uses **GitHub Actions** for automated Bash validation.
 
-The CI workflow runs on pushes and pull requests.
-
-Current pipeline:
-
-1. Checkout repository.
-2. Install ShellCheck.
-3. Validate Bash syntax using `bash -n`.
-4. Analyze scripts using ShellCheck.
-
-All checks must pass for the workflow to complete successfully.
+The CI workflow runs on pushes and pull requests. It checks Bash syntax, runs ShellCheck, and executes health-check regression tests.
 
 [View GitHub Actions](https://github.com/bog2003112/linux-server-lab/actions)
 
@@ -200,24 +196,26 @@ All checks must pass for the workflow to complete successfully.
 - Bash syntax validation.
 - Static analysis with ShellCheck.
 - Incremental development and version control.
-  
+
 ## Screenshots
 
 ### System Information
+
 Displays operating system, CPU, memory, uptime, and disk usage.
 
 ![System Information](screenshots/system-info.png)
 
 ### Network Diagnostics
+
 Displays network interface diagnostics, routing checks, and connectivity status.
 
 ![Network Diagnostics](screenshots/network-info.png)
 
 ### Server Health Check
+
 Displays disk and memory monitoring, connectivity checks, and overall health status.
 
 ![Server Health Check](screenshots/health-check.png)
-
 
 ## Roadmap
 
@@ -248,4 +246,4 @@ This repository is a practical Linux system administration and DevOps learning p
 
 **GitHub:** [@bog2003112](https://github.com/bog2003112)
 
-**Repository:** [Linux Server Lab](https://github.com/bog2003112/linux-server-lab)****
+**Repository:** [Linux Server Lab](https://github.com/bog2003112/linux-server-lab)
