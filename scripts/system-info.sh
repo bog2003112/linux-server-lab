@@ -10,8 +10,8 @@ print_section() {
 
 print_section "OPERATING SYSTEM"
 if [[ -r /etc/os-release ]]; then
-    os_name="$(awk -F= '$1 == "PRETTY_NAME" { value = substr($0, index($0, "=") + 1); gsub(/^"/, "", value); gsub(/"$/, "", value); print value; exit }' /etc/os-release)"
-    printf 'OS: %s\n' "${os_name:-Unknown}"
+    . /etc/os-release
+    printf 'OS: %s\n' "${PRETTY_NAME:-Unknown}"
 else
     printf 'OS: information unavailable\n'
 fi
