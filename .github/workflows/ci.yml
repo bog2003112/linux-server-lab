@@ -3,6 +3,7 @@ name: Linux Server Lab CI
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 jobs:
   bash_check:
