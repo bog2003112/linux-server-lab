@@ -26,14 +26,33 @@ record_status() {
 
 validate_thresholds() {
     local name value
+
     for name in \
         DISK_WARN_THRESHOLD DISK_CRIT_THRESHOLD \
         MEMORY_WARN_THRESHOLD MEMORY_CRIT_THRESHOLD; do
         value="${!name}"
-        if [[ ! "$value" =~ ^[0-9]+$ ]] || (( value < 1 || value > 100 )); then
+
+        if [[ ! "$value" =~ ^[0-9]+$ ]]; then
             printf 'ERROR: %s must be an integer between 1 and 100.\n' "$name" >&2
             return 1
         fi
+
+        value="${value#"${value%%[!0]*}"}"
+        value="${value:-0}"
+
+        if (( ${#value} > 3 )); then
+            printf 'ERROR: %s must be an integer between 1 and 100.\n' "$name" >&2
+            return 1
+        fi
+
+        value=$((10#$value))
+
+        if (( value < 1 || value > 100 )); then
+            printf 'ERROR: %s must be an integer between 1 and 100.\n' "$name" >&2
+            return 1
+        fi
+
+        printf -v "$name" '%s' "$value"
     done
 
     if (( DISK_WARN_THRESHOLD >= DISK_CRIT_THRESHOLD )); then
@@ -45,6 +64,8 @@ validate_thresholds() {
         printf 'ERROR: memory warning threshold must be lower than critical threshold.\n' >&2
         return 1
     fi
+
+    return 0
 }
 
 print_section "SERVER HEALTH CHECK"
@@ -98,7 +119,10 @@ else
 fi
 
 print_section "NETWORK CONNECTIVITY"
-if command -v ping >/dev/null 2>&1 && ping -c 2 -W 2 "$PING_TARGET" >/dev/null 2>&1; then
+if ! command -v ping >/dev/null 2>&1; then
+    printf 'UNKNOWN: ping command not found.\n'
+    record_status 3
+elif ping -c 2 -W 2 "$PING_TARGET" >/dev/null 2>&1; then
     printf 'OK: %s responds to ICMP.\n' "$PING_TARGET"
 else
     printf 'CRITICAL: connectivity check to %s failed.\n' "$PING_TARGET"
@@ -106,7 +130,10 @@ else
 fi
 
 print_section "DNS RESOLUTION"
-if command -v getent >/dev/null 2>&1 && getent ahosts "$DNS_TARGET" >/dev/null 2>&1; then
+if ! command -v getent >/dev/null 2>&1; then
+    printf 'UNKNOWN: getent command not found.\n'
+    record_status 3
+elif getent ahosts "$DNS_TARGET" >/dev/null 2>&1; then
     printf 'OK: DNS resolution works for %s.\n' "$DNS_TARGET"
 else
     printf 'CRITICAL: DNS resolution failed for %s.\n' "$DNS_TARGET"
