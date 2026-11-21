@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 set -euo pipefail
 
@@ -10,22 +10,22 @@ trap 'rm -rf "$test_dir"' EXIT
 mkdir -p "$test_dir/bin" "$test_dir/no-ping" "$test_dir/no-getent"
 
 cat > "$test_dir/bin/df" <<'EOF'
-#!/usr/bin/env bash
+#!/bin/bash
 printf 'Filesystem 1024-blocks Used Available Capacity Mounted on\n/dev/root 100 50 50 %s%% /\n' "${DISK_USAGE:-50}"
 EOF
 
 cat > "$test_dir/bin/free" <<'EOF'
-#!/usr/bin/env bash
+#!/bin/bash
 printf 'Mem: 100 %s 50 0 0 50\nSwap: 0 0 0\n' "${MEMORY_USAGE:-50}"
 EOF
 
 cat > "$test_dir/bin/ping" <<'EOF'
-#!/usr/bin/env bash
+#!/bin/bash
 exit "${PING_EXIT:-0}"
 EOF
 
 cat > "$test_dir/bin/getent" <<'EOF'
-#!/usr/bin/env bash
+#!/bin/bash
 exit "${DNS_EXIT:-0}"
 EOF
 
