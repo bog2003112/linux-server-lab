@@ -70,8 +70,12 @@ run_case() {
 }
 
 run_case "healthy server" 0 "OVERALL STATUS: OK" "$test_dir/bin"
-run_case "leading zero thresholds" 1 "WARNING: root filesystem usage is 8%" "$test_dir/bin" \
+run_case "leading zero disk thresholds" 1 "WARNING: root filesystem usage is 8%" "$test_dir/bin" \
     DISK_USAGE=8 DISK_WARN_THRESHOLD=08 DISK_CRIT_THRESHOLD=09
+run_case "leading zero memory thresholds" 1 "WARNING: RAM usage is 8%" "$test_dir/bin" \
+    MEMORY_USAGE=8 MEMORY_WARN_THRESHOLD=08 MEMORY_CRIT_THRESHOLD=09
+run_case "threshold above range" 3 "must be an integer between 1 and 100" "$test_dir/bin" \
+    DISK_WARN_THRESHOLD=101
 run_case "invalid thresholds" 3 "warning threshold must be lower than critical" "$test_dir/bin" \
     DISK_WARN_THRESHOLD=90 DISK_CRIT_THRESHOLD=80
 run_case "failed ping" 2 "CRITICAL: connectivity check" "$test_dir/bin" PING_EXIT=1
